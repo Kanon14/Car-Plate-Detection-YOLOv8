@@ -1,9 +1,4 @@
-from carPlateDetection.logger import logging
-from carPlateDetection.exception import AppException
-import sys
+from carPlateDetection.pipeline.training_pipeline import TrainPipeline
 
-try: 
-    a = 3 / "s"
-    
-except Exception as e:
-    raise AppException(e, sys)
+obj = TrainPipeline()
+obj.run_pipeline()
