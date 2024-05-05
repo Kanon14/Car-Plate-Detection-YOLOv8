@@ -162,5 +162,14 @@ cython_debug/
 # files in artifacts folder
 artifacts/*
 
+# video files in the test_sample folder
+test_sample/*
+
 # weignts after YOLOv8n Training
 yolov8n_train/*
+
+# weights of initial yolov8n trained from COCO dataset
+yolov8n.pt
+
+# sort.py
+sort.py
