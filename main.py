@@ -1,67 +1,47 @@
+import hydra
+import torch
+import easyocr
 import cv2
-import os
-from ultralytics import YOLO
-from sort import *
-from utils import get_car, read_license_plate, write_csv
+from ultralytics.engine.predictor import BasePredictor
+from ultralytics.utils import DEFAULT_CFG, ROOT, ops
+from ultralytics.utils.checks import check_imgsz
+from ultralytics.utils.plotting import Annotator, colors, save_one_box
 
-results = {}
+def getOCR(img, coords):
+    """
+    Extracts text from a specified region of an image using EasyOCR.
 
-mot_tracker = Sort()
+    Args:
+        img (numpy.ndarray): The input image from which text is to be extracted.
+        coords (tuple): A tuple containing four coordinates (x, y, w, h) that define
+                        a rectangular region in the image.
 
-# load models
-coco_model = YOLO('yolov8n.pt')
-license_plate_detector = YOLO('yolov8n_train/best.pt')
-
-# load video
-cap = cv2.VideoCapture('test_sample/sample_05.mp4')
-
-vehicles = [2, 3, 5, 7]
-
-# read frames
-frame_nmr = -1
-ret = True
-while ret:
-    frame_nmr += 1
-    ret, frame = cap.read()
-    if ret:
-        results[frame_nmr] = {}
-        # detect vehicles
-        detections = coco_model(frame)[0]
-        detections_ = []
-        for detection in detections.boxes.data.tolist():
-            x1, y1, x2, y2, score, class_id = detection
-            if int(class_id) in vehicles:
-                detections_.append([x1, y1, x2, y2, score])
-
-        # track vehicles
-        track_ids = mot_tracker.update(np.asarray(detections_))
-
-        # detect license plates
-        license_plates = license_plate_detector(frame)[0]
-        for license_plate in license_plates.boxes.data.tolist():
-            x1, y1, x2, y2, score, class_id = license_plate
-
-            # assign license plate to car
-            xcar1, ycar1, xcar2, ycar2, car_id = get_car(license_plate, track_ids)
-
-            if car_id != -1:
-
-                # crop license plate
-                license_plate_crop = frame[int(y1):int(y2), int(x1): int(x2), :]
-
-                # process license plate
-                license_plate_crop_gray = cv2.cvtColor(license_plate_crop, cv2.COLOR_BGR2GRAY)
-                _, license_plate_crop_thresh = cv2.threshold(license_plate_crop_gray, 64, 255, cv2.THRESH_BINARY_INV)
-
-                # read license plate number
-                license_plate_text, license_plate_text_score = read_license_plate(license_plate_crop_thresh)
-
-                if license_plate_text is not None:
-                    results[frame_nmr][car_id] = {'car': {'bbox': [xcar1, ycar1, xcar2, ycar2]},
-                                                  'license_plate': {'bbox': [x1, y1, x2, y2],
-                                                                    'text': license_plate_text,
-                                                                    'bbox_score': score,
-                                                                    'text_score': license_plate_text_score}}
-
-# write results
-write_csv(results, "./test.csv")
+    Returns:
+        str: The extracted text from the specified region of the image.
+    """
+    # Extract coordinates from the input and convert them to integers
+    x, y, w, h = int(coords[0]), int(coords[1]), int(coords[2]), int(coords[3])
+    
+    # Crop the image to the region defined by the coordinates
+    img = img[y:h, x:w]
+    
+    # Set the confidence threshold for OCR results
+    conf = 0.2
+    
+    # Convert the cropped image to grayscale
+    gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+    results = reader.readtext(gray)
+    ocr = ""
+    
+    # Iterate over the OCR results
+    for result in results:
+        if len(results) == 1:
+            ocr = result[1]
+        if len(results) > 1 and len(results[1]) > 6 and results[2] > conf:
+            ocr = results[1]
+    
+    return str(ocr)
+    
+    
+if __name__ == "__main__":
+    reader = easyocr.Reader(['en'])
