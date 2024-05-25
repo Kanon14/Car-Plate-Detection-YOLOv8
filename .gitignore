@@ -170,3 +170,6 @@ yolov8n_train/*
 
 # ignore results upload
 results.csv
+
+# testing output
+outputs/*
