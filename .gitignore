@@ -168,8 +168,5 @@ test_sample/*
 # weignts after YOLOv8n Training
 yolov8n_train/*
 
-# weights of initial yolov8n trained from COCO dataset
-yolov8n.pt
-
-# sort.py
-sort.py
+# ignore results upload
+results.csv
