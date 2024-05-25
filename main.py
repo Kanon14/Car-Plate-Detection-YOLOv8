@@ -1,47 +1,55 @@
-import hydra
-import torch
+import ast
+import cv2 as cv
 import easyocr
-import cv2
-from ultralytics.engine.predictor import BasePredictor
-from ultralytics.utils import DEFAULT_CFG, ROOT, ops
-from ultralytics.utils.checks import check_imgsz
-from ultralytics.utils.plotting import Annotator, colors, save_one_box
+from glob import glob
+import numpy as np
+import pandas as pd
+import string
+from ultralytics import YOLO
 
-def getOCR(img, coords):
-    """
-    Extracts text from a specified region of an image using EasyOCR.
+# Initiate the detection model
+coco_model = YOLO("./yolov8n_train/yolov8n.pt") # For cars
+np_model = YOLO("./yolov8n_train/best.pt") # For car plate
 
-    Args:
-        img (numpy.ndarray): The input image from which text is to be extracted.
-        coords (tuple): A tuple containing four coordinates (x, y, w, h) that define
-                        a rectangular region in the image.
+# Read in test video paths
+videos = glob("./test_sample/*.mp4")
 
-    Returns:
-        str: The extracted text from the specified region of the image.
-    """
-    # Extract coordinates from the input and convert them to integers
-    x, y, w, h = int(coords[0]), int(coords[1]), int(coords[2]), int(coords[3])
-    
-    # Crop the image to the region defined by the coordinates
-    img = img[y:h, x:w]
-    
-    # Set the confidence threshold for OCR results
-    conf = 0.2
-    
-    # Convert the cropped image to grayscale
-    gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
-    results = reader.readtext(gray)
-    ocr = ""
-    
-    # Iterate over the OCR results
-    for result in results:
-        if len(results) == 1:
-            ocr = result[1]
-        if len(results) > 1 and len(results[1]) > 6 and results[2] > conf:
-            ocr = results[1]
-    
-    return str(ocr)
-    
-    
-if __name__ == "__main__":
-    reader = easyocr.Reader(['en'])
+# read video by index
+video = cv.VideoCapture(videos[3])
+
+ret = True
+frame_number = -1
+vehicles = [2,3,5]
+
+# read the 10 first frames
+while ret:
+    frame_number += 1
+    ret, frame = video.read()
+
+    if ret and frame_number < 10:
+        
+        # vehicle detector
+        detections = coco_model.track(frame, persist=True)[0]
+        for detection in detections.boxes.data.tolist():
+            x1, y1, x2, y2, track_id, score, class_id = detection
+            if int(class_id) in vehicles and score > 0.5:
+                vehicle_bounding_boxes = []
+                vehicle_bounding_boxes.append([x1, y1, x2, y2, track_id, score])
+                for bbox in vehicle_bounding_boxes:
+                    print(bbox)
+                    roi = frame[int(y1):int(y2), int(x1):int(x2)]
+                    # debugging check if bbox lines up with detected vehicles (should be identical to save_crops() above
+                    # cv.imwrite(str(track_id) + '.jpg', roi)
+                    
+                    # license plate detector for region of interest
+                    license_plates = np_model(roi)[0]
+                    # check every bounding box for a license plate
+                    for license_plate in license_plates.boxes.data.tolist():
+                        plate_x1, plate_y1, plate_x2, plate_y2, plate_score, _ = license_plate
+                        # verify detections
+                        print(license_plate, 'track_id: ' + str(bbox[4]))
+                        plate = roi[int(plate_y1):int(plate_y2), int(plate_x1):int(plate_x2)]
+                        cv.imwrite(str(track_id) + '.jpg', plate)
+                        
+video.release()
+                
