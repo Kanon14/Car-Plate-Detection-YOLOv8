@@ -69,10 +69,10 @@ while ret:
                                 }
                             }
 
-write_csv(results, './results.csv')
+write_csv(results, './outputs/results_01.csv')
 video.release()
 
-results = pd.read_csv('./results.csv')
+results = pd.read_csv('./outputs/results_01.csv')
 
 # show results for tracking ID `1` - sort by OCR prediction confidence
 results[results['track_id'] == 1.].sort_values(by='license_text_score', ascending=False)

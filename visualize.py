@@ -5,7 +5,7 @@ import pandas as pd
 from glob import glob
 from utils import *
 
-results = pd.read_csv("./results.csv")
+results = pd.read_csv("./outputs/results.csv")
 
 # Read in test video paths and read video by index
 videos = glob("./test_sample/*.mp4")
@@ -98,4 +98,6 @@ while ret:
         frame = cv.resize(frame, (1280, 720))
 
         cv.imshow('frame', frame)
-        cv.waitKey(0)
+        key = cv.waitKey(1)
+        if key == ord('q'):
+            break

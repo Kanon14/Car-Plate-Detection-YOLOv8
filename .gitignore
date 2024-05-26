@@ -168,8 +168,5 @@ test_sample/*
 # weignts after YOLOv8n Training
 yolov8n_train/*
 
-# ignore results upload
-results.csv
-
 # testing output
 outputs/*
