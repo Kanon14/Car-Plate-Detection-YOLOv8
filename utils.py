@@ -11,17 +11,23 @@ dict_char_to_int = {'O': '0', 'I': '1', 'J': '3', 'A': '4', 'G': '6', 'S': '5'}
 dict_int_to_char = {'0': 'O', '1': 'I', '3': 'J', '4': 'A', '6': 'G', '5': 'S'}
 
 def write_csv(results, output_path):
+    # Open the output file in write mode
     with open(output_path, 'w') as f:
+        # Write the header row to the CSV file
         f.write('{},{},{},{},{},{},{},{}\n'.format(
             'frame_number', 'track_id', 'car_bbox', 'car_bbox_score',
             'license_plate_bbox', 'license_plate_bbox_score', 'license_plate_number',
             'license_text_score'))
 
+        # Iterate through each frame number in the results
         for frame_number in results.keys():
+            # Iterate through each track ID in the current frame
             for track_id in results[frame_number].keys():
+                # Check if the necessary keys are present in the results
                 if 'car' in results[frame_number][track_id].keys() and \
                    'license_plate' in results[frame_number][track_id].keys() and \
                    'number' in results[frame_number][track_id]['license_plate'].keys():
+                    # Write the data for the current track to the CSV file
                     f.write('{},{},{},{},{},{},{},{}\n'.format(
                         frame_number,
                         track_id,
@@ -42,6 +48,7 @@ def write_csv(results, output_path):
                         results[frame_number][track_id]['license_plate']['number'],
                         results[frame_number][track_id]['license_plate']['text_score'])
                     )
+        # Close the file
         f.close()
 
 def license_complies_format(text):
